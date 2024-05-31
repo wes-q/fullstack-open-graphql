@@ -7,7 +7,7 @@ const Navbar = () => {
                 <div style={{ display: "flex", gap: 10 }}>
                     <NavLink to="/">Authors</NavLink>
                     <NavLink to="books">Books</NavLink>
-                    <NavLink to="add">Add Book</NavLink>
+                    <NavLink to="new-book">Add Book</NavLink>
                 </div>
             </div>
         </div>
