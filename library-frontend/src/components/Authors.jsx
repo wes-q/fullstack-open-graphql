@@ -1,12 +1,18 @@
+import { useState } from "react";
 import { ALL_AUTHORS } from "../queries";
 import { useQuery } from "@apollo/client";
+import UpdateAuthor from "./UpdateAuthor";
 
 const Authors = () => {
     const { loading, error, data } = useQuery(ALL_AUTHORS, {});
+    const [authorName, setAuthorName] = useState("");
+    const [birthYear, setBirthYear] = useState("");
 
     if (loading) return <div>Loading...</div>;
     if (error) return <div>Error: {error.message}</div>;
     const authors = data.allAuthors;
+
+    const handleSubmit = () => {};
 
     return (
         <div>
@@ -27,6 +33,7 @@ const Authors = () => {
                     ))}
                 </tbody>
             </table>
+            <UpdateAuthor></UpdateAuthor>
         </div>
     );
 };
