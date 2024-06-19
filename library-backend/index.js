@@ -61,66 +61,28 @@ const typeDefs = `
 
 const resolvers = {
     Query: {
-        // personCount: async () => Person.collection.countDocuments(),
         bookCount: async () => Book.collection.countDocuments(),
         authorCount: async () => Author.collection.countDocuments(),
         allBooks: async (root, args) => {
-            // let filteredBooks = books;
+            if (args.genre) {
+                return Book.find({ genres: { $in: [args.genre] } }).populate("author");
+            }
 
-            // if (args.genre) {
-            //     filteredBooks = filteredBooks.filter(({ genres }) => genres.includes(args.genre));
-            // }
-            // if (args.author) {
-            //     filteredBooks = filteredBooks.filter(({ author }) => author === args.author);
-            // }
-            // return filteredBooks;
-            return Book.find({});
+            return await Book.find().populate("author");
         },
         allAuthors: async () => Author.find({}),
     },
     Author: {
-        bookCount: (root) => books.filter(({ author }) => author === root.name).length,
-    },
-    Book: {
-        author: ({ name }) => {
-            return {
-                name,
-            };
+        bookCount: async (root) => {
+            const foundAuthor = await Author.findOne({ name: root.name });
+            const foundBooks = await Book.find({ author: foundAuthor.id });
+            return foundBooks.length;
         },
     },
     Mutation: {
         addBook: async (root, args) => {
-            // if (!authors.find(({ name }) => name === args.author)) {
-            //     const author = {
-            //         name: args.author,
-            //         id: uuid(),
-            //     };
-            //     authors = authors.concat(author);
-            // }
-            // const book = { ...args };
-            // books = books.concat(book);
-            // return book;
-
-            // const newBook = new Book({ ...args });
-            // console.log(author);
-            // let author = authors.find(author => author.name === args.author);
-
-            // let author = { name: args.author };
-            // if (!author) {
-            //   author = { name: args.author }; // You can set age or other fields if necessary
-            //   authors.push(author);
-            // }
-
             const author = await Author.findOne({});
-            // console.log(author._id);
-            // const book = new Book({ ...args, author: author });
-
-            const newBook = new Book({
-                title: args.title,
-                published: args.published,
-                author: author._id,
-                genres: args.genres,
-            });
+            const book = new Book({ ...args, author: author });
 
             try {
                 await newBook.save();
@@ -136,15 +98,40 @@ const resolvers = {
 
             return newBook;
         },
-        editAuthor: (root, args) => {
-            const author = authors.find(({ name }) => name === args.name);
+        editAuthor: async (root, args) => {
+            // // Find the arg author name from the array of authors
+            // const author = authors.find(({ name }) => name === args.name);
+            // if (!author) {
+            //     return null;
+            // }
+
+            // Find the arg author name from the author collection
+            const author = await Author.findOne({ name: args.name });
+
             if (!author) {
+                console.log("Return null");
                 return null;
             }
 
-            const updatedAuthor = { ...author, born: args.setBornTo };
-            authors = authors.map((author) => (author.name === args.name ? updatedAuthor : author));
-            return updatedAuthor;
+            const filter = { name: args.name };
+            const update = {
+                born: args.setBornTo,
+            };
+
+            try {
+                // const updatedAuthor = await Author.updateOne(filter, update);
+                // const updatedAuthor = await Author.findOneAndUpdate(filter, update, { new: true });
+                const updatedAuthor = await Author.findByIdAndUpdate(author.id, update, { new: true });
+                return updatedAuthor;
+            } catch (error) {
+                throw new GraphQLError("Edit author failed", {
+                    extensions: {
+                        code: "BAD_USER_INPUT",
+                        invalidArgs: args.name,
+                        error,
+                    },
+                });
+            }
         },
     },
 };
